@@ -28,9 +28,9 @@ if os.path.exists(model_path):
 
             if prediction == "Happy":
                 st.balloons()
-                st.info("💛 Keep spreading joy!")
+                st.info("💛 Keep happy nha Tatbolz")
             elif prediction == "Sad":
-                st.warning("💙 Take care of yourself. You're not alone.")
+                st.warning("💙 Take care of yourself. You're not alone nhe Tatbolz")
             elif prediction == "Anxious":
                 st.info("🧘‍♂️ Try some breathing exercises. You're doing great!")
             else:
