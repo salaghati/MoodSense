@@ -4,15 +4,9 @@ import os
 
 st.set_page_config(page_title="MoodSense by Tu", page_icon="🧠", layout="centered")
 
-st.markdown(
-    '''
-    <div style="text-align: center; margin-bottom: 10px;">
-        <img src="app/avatar.jpg" alt="Avatar" style="border-radius: 50%; width: 120px; border: 3px solid #aaa;" />
-        <h2 style="margin-top: 10px;">👋 Hi! How are you feeling today?</h2>
-    </div>
-    ''',
-    unsafe_allow_html=True
-)
+st.image("app/avatar.jpg", width=120)
+st.markdown("## 👋 Hi Tu! How are you feeling today?")
+
 
 model_path = os.path.join(os.path.dirname(__file__), 'model.pkl')
 if os.path.exists(model_path):
