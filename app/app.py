@@ -8,7 +8,7 @@ st.markdown(
     '''
     <div style="text-align: center; margin-bottom: 10px;">
         <img src="app/avatar.jpg" alt="Avatar" style="border-radius: 50%; width: 120px; border: 3px solid #aaa;" />
-        <h2 style="margin-top: 10px;">👋 Hi Tu! How are you feeling today?</h2>
+        <h2 style="margin-top: 10px;">👋 Hi! How are you feeling today?</h2>
     </div>
     ''',
     unsafe_allow_html=True
