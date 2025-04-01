@@ -4,7 +4,7 @@ import os
 
 st.set_page_config(page_title="MoodSense by Tu", page_icon="🧠", layout="centered")
 
-st.image("https://imgur.com/a/JZADME3", width=120)
+st.image("hhttps://i.imgur.com/QzloMmO.png", width=120)
 st.markdown("## 👋 Hi! How are you feeling today?")
 
 
