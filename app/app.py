@@ -37,6 +37,6 @@ else:
 with st.sidebar:
     st.image("app/avatar.jpg", width=100)
     st.markdown("### 🤖 MoodSense")
-    st.markdown("Built by Tu – An AI Engineer in the making 💻")
+    st.markdown("Built by Tu – I love AI")
     st.markdown("[GitHub Repo](https://github.com/salaghat1/MoodSense)")
     st.markdown("— Powered by Streamlit & scikit-learn —")
