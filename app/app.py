@@ -9,12 +9,21 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2) Load model & tokenizer from Hugging Face
+# 1) Lấy token từ secrets
+hf_token = st.secrets["HF_TOKEN"]
+
+# 2) Repo HF của bạn
 REPO_ID = "Salaghati/moodsense-distilbert"
-tokenizer = AutoTokenizer.from_pretrained(REPO_ID)
+
+# 3) Load với auth token để tránh rate‐limit
+tokenizer = AutoTokenizer.from_pretrained(
+    REPO_ID,
+    use_auth_token=hf_token
+)
 model = AutoModelForSequenceClassification.from_pretrained(
     REPO_ID,
-    problem_type="multi_label_classification"
+    problem_type="multi_label_classification",
+    use_auth_token=hf_token
 )
 model.eval()
 
