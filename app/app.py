@@ -1,6 +1,15 @@
 import streamlit as st
 import joblib
 import os
+from huggingface_hub import hf_hub_download
+
+# 1) Tải về (auto cache) từ HF Hub
+repo_id   = "Salaghati/moodsense-tfidf-svm"
+filename  = "model.pkl"
+model_path = hf_hub_download(repo_id, filename)
+
+# 2) Load
+model = joblib.load(model_path)
 
 st.set_page_config(page_title="MoodSense by Tu", page_icon="🧠", layout="centered")
 
