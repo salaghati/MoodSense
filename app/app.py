@@ -2,14 +2,23 @@ import streamlit as st
 import joblib
 import os
 from huggingface_hub import hf_hub_download
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 
-# 1) Tải về (auto cache) từ HF Hub
-repo_id   = "Salaghati/moodsense-tfidf-svm"
-filename  = "model.pkl"
-model_path = hf_hub_download(repo_id, filename)
+# 1) Repo HF của bạn
+repo_id = "Salaghati/moodsense-distilbert"
 
-# 2) Load
-model = joblib.load(model_path)
+# 2) Load tokenizer + model
+tokenizer = AutoTokenizer.from_pretrained(repo_id)
+model     = AutoModelForSequenceClassification.from_pretrained(
+    repo_id,
+    problem_type="multi_label_classification",
+)
+model.eval()
+
+# 3) Đưa lên device
+device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+model.to(device)
 
 st.set_page_config(page_title="MoodSense by Tu", page_icon="🧠", layout="centered")
 
