@@ -1,60 +1,75 @@
 import streamlit as st
-import joblib
-import os
-from huggingface_hub import hf_hub_download
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import torch
 
-# 1) Repo HF của bạn
-repo_id = "Salaghati/moodsense-distilbert"
+# 1) Page config
+st.set_page_config(
+    page_title="MoodSense by Tu",
+    page_icon="🧠",
+    layout="centered"
+)
 
-# 2) Load tokenizer + model
-tokenizer = AutoTokenizer.from_pretrained(repo_id)
-model     = AutoModelForSequenceClassification.from_pretrained(
-    repo_id,
-    problem_type="multi_label_classification",
+# 2) Load model & tokenizer from Hugging Face
+REPO_ID = "Salaghati/moodsense-distilbert"
+tokenizer = AutoTokenizer.from_pretrained(REPO_ID)
+model = AutoModelForSequenceClassification.from_pretrained(
+    REPO_ID,
+    problem_type="multi_label_classification"
 )
 model.eval()
 
-# 3) Đưa lên device
-device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-model.to(device)
+# 3) Build a pipeline for multi-label classification
+#    On Mac MPS use device=0, otherwise CPU device=-1
+device = 0 if torch.backends.mps.is_available() else -1
+classifier = pipeline(
+    "text-classification",
+    model=model,
+    tokenizer=tokenizer,
+    device=device,
+    return_all_scores=True
+)
 
-st.set_page_config(page_title="MoodSense by Tu", page_icon="🧠", layout="centered")
-
+# 4) Header
 st.image("https://i.imgur.com/QzloMmO.png", width=120)
 st.markdown("## 👋 Hi! How are you feeling today?")
 
+# 5) User input
+journal_text = st.text_area(
+    "✍️ Enter your journal entry below:",
+    height=200,
+    placeholder="Today I feel..."
+)
 
-model_path = os.path.join(os.path.dirname(__file__), 'model.pkl')
-if os.path.exists(model_path):
-    model = joblib.load(model_path)
-    
-    st.markdown("### ✍️ Enter your journal entry below:")
-    journal_text = st.text_area("", height=200, placeholder="Today I feel...")
+# 6) Predict button
+if st.button("🔮 Predict Mood"):
+    if journal_text.strip():
+        # Run inference
+        outputs = classifier(journal_text, top_k=5)[0]
+        # Display top-5 scores
+        scores = {item["label"]: f"{item['score']:.3f}" for item in outputs}
+        st.success("📝 Top Predictions:")
+        st.table(scores)
 
-    if st.button("🔮 Predict Mood"):
-        if journal_text.strip():
-            prediction = model.predict([journal_text])[0]
-            st.success(f"📝 Predicted Mood: **{prediction}**")
-
-            if prediction == "Happy":
-                st.balloons()
-                st.info("💛 Keep happy nha Tatbolz")
-            elif prediction == "Sad":
-                st.warning("💙 Take care of yourself. You're not alone nhe Tatbolz")
-            elif prediction == "Anxious":
-                st.info("🧘‍♂️ Try some breathing exercises. You're doing great!")
-            else:
-                st.info("🌤️ Steady and calm is good too.")
+        # Custom feedback based on top label
+        top1 = outputs[0]["label"].lower()
+        if top1 == "joy":
+            st.balloons()
+            st.info("💛 Keep that joy alive!")
+        elif top1 in ("sadness", "disappointment", "grief"):
+            st.warning("💙 It's okay to feel down. Take care of yourself.")
+        elif top1 in ("anger", "annoyance", "disgust"):
+            st.error("😡 I sense some anger. Maybe take a few deep breaths?")
+        elif top1 in ("fear", "nervousness"):
+            st.info("🧘‍♂️ You’ve got this. Breathe in… breathe out…")
         else:
-            st.warning("Please enter something to analyze.")
-else:
-    st.error("❌ Model file not found. Please train the model and upload model.pkl.")
+            st.info("🌤️ Feeling complex emotions – that's perfectly normal.")
+    else:
+        st.warning("Please enter some text to analyze.")
 
+# 7) Sidebar
 with st.sidebar:
     st.image("app/avatar.jpg", width=100)
     st.markdown("### 🤖 MoodSense")
     st.markdown("Built by Tu – I love AI")
     st.markdown("[GitHub Repo](https://github.com/salaghat1/MoodSense)")
-    st.markdown("— Powered by Streamlit & scikit-learn —")
+    st.markdown("— Powered by Streamlit & Transformers —")
