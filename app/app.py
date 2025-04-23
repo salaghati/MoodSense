@@ -41,7 +41,7 @@ if st.button("🔮 Predict Mood"):
     if not journal_text.strip():
         st.warning("Please enter some text to analyze.")
     else:
-        # Tokenize (returns dict of tensors, NOT a single tensor)
+        # 1) Tokenize + move to device
         enc = tokenizer(
             journal_text,
             return_tensors="pt",
@@ -49,39 +49,42 @@ if st.button("🔮 Predict Mood"):
             padding="max_length",
             max_length=128
         )
-        # Move tensors to device
         enc = {k: v.to(device) for k, v in enc.items()}
 
-        # Forward pass
+        # 2) Forward pass
         with torch.no_grad():
-            logits = model(**enc).logits  # shape (1, num_labels)
+            logits = model(**enc).logits  # shape (1, 28)
 
-        # Convert to probabilities
+        # 3) Sigmoid → probabilities
         probs = torch.sigmoid(logits)[0].cpu().tolist()
 
-        # Map ids to labels and sort
-        id2label = model.config.id2label
-        pairs = [(id2label[i], probs[i]) for i in range(len(probs))]
-        top5  = sorted(pairs, key=lambda x: x[1], reverse=True)[:5]
+        # 4) Tìm top-1
+        emotion_labels = [  # đảm bảo trùng đúng thứ tự
+            "admiration","amusement","anger","annoyance","approval","caring","confusion",
+            "curiosity","desire","disappointment","disapproval","disgust","embarrassment",
+            "excitement","fear","gratitude","grief","joy","love","nervousness","neutral",
+            "optimism","pride","relief","remorse","sadness","surprise"
+        ]
+        top1_label, top1_score = max(
+            zip(emotion_labels, probs),
+            key=lambda x: x[1]
+        )
 
-        # Display as table
-        table = {lbl: f"{score:.3f}" for lbl, score in top5}
-        st.success("📝 Top 5 Emotions")
-        st.table(table)
+        # 5) Hiển thị kết quả duy nhất
+        st.success(f"📝 Predicted Mood: **{top1_label}** ({top1_score:.3f})")
 
-        # Custom messages on top-1
-        top1 = top5[0][0]
-        if top1 == "joy":
-            st.balloons()
-            st.info("💛 Keep that joy alive!")
-        elif top1 in ("sadness", "disappointment", "grief"):
+        # tuỳ chỉnh message
+        if top1_label == "joy":
+            st.balloons(); st.info("💛 Keep that joy alive!")
+        elif top1_label in ("sadness","disappointment","grief"):
             st.warning("💙 It's okay to feel down. Take care of yourself.")
-        elif top1 in ("anger", "annoyance", "disgust"):
-            st.error("😡 I sense some anger. Maybe take a few deep breaths?")
-        elif top1 in ("fear", "nervousness"):
+        elif top1_label in ("anger","annoyance","disgust"):
+            st.error("😡 I sense anger. Maybe take a few deep breaths?")
+        elif top1_label in ("fear","nervousness"):
             st.info("🧘‍♂️ You’ve got this. Breathe in… breathe out…")
         else:
-            st.info("🌤️ Feeling complex emotions – that's perfectly normal.")
+            st.info("🌤️ Complex emotions are normal.")
+
 
 # ─── 5) Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
