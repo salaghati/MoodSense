@@ -1,0 +1,3 @@
+[server]
+# disable the file‐watcher so Streamlit won’t iterate over torch.classes
+fileWatcherType = "none"
