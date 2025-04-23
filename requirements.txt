@@ -1,0 +1,6 @@
+streamlit
+scikit-learn
+joblib
+huggingface_hub
+torch
+transformers
