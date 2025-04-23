@@ -1,9 +1,8 @@
-# app/app.py
 import streamlit as st
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-# ─── 0) Page setup ─────────────────────────────────────────────────────────────
+# ─── 0) Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="MoodSense by Tu",
     page_icon="🧠",
@@ -12,61 +11,65 @@ st.set_page_config(
 st.image("https://i.imgur.com/QzloMmO.png", width=120)
 st.markdown("## 👋 Hi! How are you feeling today?")
 
-# ─── 1) Load model & tokenizer from HF Hub ────────────────────────────────────
-repo_id  = "Salaghati/moodsense-distilbert"
+# ─── 1) Load HF model & tokenizer ───────────────────────────────────────────────
 hf_token = st.secrets["HF_TOKEN"]
+repo_id  = "Salaghati/moodsense-distilbert"
 
 tokenizer = AutoTokenizer.from_pretrained(
-    repo_id,
-    use_auth_token=hf_token,
+    repo_id, use_auth_token=hf_token
 )
 model = AutoModelForSequenceClassification.from_pretrained(
     repo_id,
     problem_type="multi_label_classification",
-    use_auth_token=hf_token,
+    use_auth_token=hf_token
 )
 model.eval()
 
-# ─── 2) Device ────────────────────────────────────────────────────────────────
+# ─── 2) Device setup ─────────────────────────────────────────────────────────────
 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
 model.to(device)
 
-# ─── 3) Text input ────────────────────────────────────────────────────────────
+# ─── 3) User input ────────────────────────────────────────────────────────────────
 journal_text = st.text_area(
     "✍️ Enter your journal entry below:",
     height=200,
     placeholder="Today I feel..."
 )
 
-# ─── 4) Run inference & display ───────────────────────────────────────────────
+# ─── 4) Inference & display ───────────────────────────────────────────────────────
 if st.button("🔮 Predict Mood"):
     if not journal_text.strip():
         st.warning("Please enter some text to analyze.")
     else:
-        # Tokenize + forward
-        inputs = tokenizer(
+        # Tokenize (returns dict of tensors, NOT a single tensor)
+        enc = tokenizer(
             journal_text,
             return_tensors="pt",
             truncation=True,
-            padding=True,
+            padding="max_length",
             max_length=128
-        ).to(device)
+        )
+        # Move tensors to device
+        enc = {k: v.to(device) for k, v in enc.items()}
+
+        # Forward pass
         with torch.no_grad():
-            logits = model(**inputs).logits  # shape (1, num_labels)
+            logits = model(**enc).logits  # shape (1, num_labels)
+
+        # Convert to probabilities
         probs = torch.sigmoid(logits)[0].cpu().tolist()
 
-        # Map label‐id → label name
-        id2label = model.config.id2label  # e.g. {0: 'admiration', 1: 'amusement', ...}
+        # Map ids to labels and sort
+        id2label = model.config.id2label
         pairs = [(id2label[i], probs[i]) for i in range(len(probs))]
-        # Sort by probability desc and take top‐5
-        top5 = sorted(pairs, key=lambda x: x[1], reverse=True)[:5]
+        top5  = sorted(pairs, key=lambda x: x[1], reverse=True)[:5]
 
-        # Show as a table
-        table = {label: f"{score:.3f}" for label, score in top5}
+        # Display as table
+        table = {lbl: f"{score:.3f}" for lbl, score in top5}
         st.success("📝 Top 5 Emotions")
         st.table(table)
 
-        # Optional “flair” based on top‐1
+        # Custom messages on top-1
         top1 = top5[0][0]
         if top1 == "joy":
             st.balloons()
@@ -80,10 +83,10 @@ if st.button("🔮 Predict Mood"):
         else:
             st.info("🌤️ Feeling complex emotions – that's perfectly normal.")
 
-# ─── 5) Sidebar ────────────────────────────────────────────────────────────────
+# ─── 5) Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.image("app/avatar.jpg", width=100)
     st.markdown("### 🤖 MoodSense")
     st.markdown("Built by Tu – I love AI")
-    st.markdown("[GitHub Repo](https://github.com/salaghati/MoodSense)")
+    st.markdown("[GitHub Repo](https://github.com/salaghat1/MoodSense)")
     st.markdown("— Powered by Streamlit & Transformers —")
