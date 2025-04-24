@@ -26,8 +26,8 @@ model = AutoModelForSequenceClassification.from_pretrained(
 model.eval()
 
 # ─── 2) Device setup ─────────────────────────────────────────────────────────────
-device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-model.to(device)
+#device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+#model.to(device)
 
 # ─── 3) User input ────────────────────────────────────────────────────────────────
 journal_text = st.text_area(
